@@ -89,6 +89,7 @@ import numpy as np
 D = 10000  # Annual demand
 S = 50     # Ordering cost
 H = 2      # Holding cost
+P = 10     # Purchase cost per unit
 
 # Optimal order quantity
 EOQ = np.sqrt((2 * D * S) / H)
