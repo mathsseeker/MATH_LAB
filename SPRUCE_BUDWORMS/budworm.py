@@ -6,7 +6,13 @@ from scipy.integrate import solve_ivp
 
 def spruce_budworm(t: float, x: float, r: float = 0.5, k: float = 10) -> float:
     "Spruce budworm population growth model."
-    dxdt = r * x * (1 - x / k) - x**2 / (1 + x**2)
+    dxdt = r * x * (1 -x/k) - x**2 / (1 + x**2)
+    return dxdt
+
+
+def spruce_budworm_no_carrying_capacity(t: float, x: float, r: float = 0.5, k: float = 10) -> float:
+    """Spruce budworm population growth model WITHOUT the -x/k term (no carrying capacity limiting growth)."""
+    dxdt = r * x - x**2 / (1 + x**2)
     return dxdt
 
 
@@ -225,4 +231,123 @@ def plot_spruce_budworm(t: np.ndarray, x: np.ndarray):
     # - This allows the user to further customize the plot if needed
     # - For example, they could add more data, change colors, or save to file
     return fig, ax
+
+
+def compare_models_rate(x_t: float, r: float = 0.5, k: float = 10):
+    """
+    Compare the rate of change dx/dt for both models side by side.
+    
+    Parameters:
+    -----------
+    x_t : float
+        Current population
+    r : float
+        Growth rate parameter (default: 0.5)
+    k : float
+        Carrying capacity (default: 10)
+    """
+    x_values = np.linspace(0, k, 500)
+    
+    # Calculate dx/dt for both models
+    dxdt_original = np.array([spruce_budworm(0, x, r, k) for x in x_values])
+    dxdt_no_cap = np.array([spruce_budworm_no_carrying_capacity(0, x, r, k) for x in x_values])
+    
+    # Create side-by-side plots
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # Plot original model
+    ax1.plot(x_values, dxdt_original, 'b-', linewidth=2, label='dx/dt (with -x/k)')
+    ax1.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
+    ax1.axvline(x=x_t, color='green', linestyle='--', linewidth=2, alpha=0.7, label=f'Current population (x={x_t:.2f})')
+    ax1.grid(True, alpha=0.3)
+    ax1.set_xlabel('Population (x)', fontsize=12)
+    ax1.set_ylabel('Rate of change (dx/dt)', fontsize=12)
+    ax1.set_title(f'Original Model: r*x*(1-x/k) - x²/(1+x²)\n(r={r}, k={k})', fontsize=12)
+    ax1.legend(fontsize=10)
+    ax1.set_xlim(0, k)
+    
+    # Plot model without carrying capacity
+    ax2.plot(x_values, dxdt_no_cap, 'r-', linewidth=2, label='dx/dt (without -x/k)')
+    ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
+    ax2.axvline(x=x_t, color='green', linestyle='--', linewidth=2, alpha=0.7, label=f'Current population (x={x_t:.2f})')
+    ax2.grid(True, alpha=0.3)
+    ax2.set_xlabel('Population (x)', fontsize=12)
+    ax2.set_ylabel('Rate of change (dx/dt)', fontsize=12)
+    ax2.set_title(f'Modified Model: r*x - x²/(1+x²)\n(r={r}, k={k})', fontsize=12)
+    ax2.legend(fontsize=10)
+    ax2.set_xlim(0, k)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    print(f"\nComparison for r={r}, k={k}:")
+    print(f"Original model has carrying capacity limiting growth")
+    print(f"Modified model removes the -x/k term, allowing unlimited growth")
+
+
+def compare_models_evolution(x0: float, r: float = 0.5, k: float = 10, t_max: float = 50.0):
+    """
+    Compare the population evolution over time for both models.
+    
+    Parameters:
+    -----------
+    x0 : float
+        Initial population
+    r : float
+        Growth rate parameter (default: 0.5)
+    k : float
+        Carrying capacity (default: 10)
+    t_max : float
+        Maximum time to simulate (default: 50.0)
+    """
+    t_span = (0, t_max)
+    t_eval_points = np.linspace(0, t_max, 500)
+    
+    # Solve for original model
+    sol_original = solve_ivp(
+        fun=spruce_budworm,
+        t_span=t_span,
+        y0=[x0],
+        t_eval=t_eval_points,
+        args=(r, k),
+        method="RK45"
+    )
+    
+    # Solve for model without carrying capacity
+    sol_no_cap = solve_ivp(
+        fun=spruce_budworm_no_carrying_capacity,
+        t_span=t_span,
+        y0=[x0],
+        t_eval=t_eval_points,
+        args=(r, k),
+        method="RK45"
+    )
+    
+    # Create comparison plot
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+    
+    # Plot original model
+    ax1.plot(sol_original.t, sol_original.y[0], 'b-', linewidth=2, label='Original Model')
+    ax1.grid(True, alpha=0.3, linestyle='--')
+    ax1.set_xlabel('Time (t)', fontsize=12)
+    ax1.set_ylabel('Population (x)', fontsize=12)
+    ax1.set_title(f'Original Model: r*x*(1-x/k) - x²/(1+x²)\n(x0={x0}, r={r}, k={k})', fontsize=12)
+    ax1.legend(fontsize=10)
+    ax1.set_ylim(0, None)
+    
+    # Plot model without carrying capacity
+    ax2.plot(sol_no_cap.t, sol_no_cap.y[0], 'r-', linewidth=2, label='Modified Model')
+    ax2.grid(True, alpha=0.3, linestyle='--')
+    ax2.set_xlabel('Time (t)', fontsize=12)
+    ax2.set_ylabel('Population (x)', fontsize=12)
+    ax2.set_title(f'Modified Model: r*x - x²/(1+x²)\n(x0={x0}, r={r}, k={k})', fontsize=12)
+    ax2.legend(fontsize=10)
+    ax2.set_ylim(0, None)
+    
+    plt.tight_layout()
+    plt.show()
+    
+    print(f"\nEvolution comparison (x0={x0}, r={r}, k={k}, t_max={t_max}):")
+    print(f"Original model final population: {sol_original.y[0][-1]:.4f}")
+    print(f"Modified model final population: {sol_no_cap.y[0][-1]:.4f}")
 

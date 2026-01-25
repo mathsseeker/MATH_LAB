@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
 
 # Import model functions from local module
-from budworm import spruce_budworm, evolve_spruce_budworm
+from budworm import spruce_budworm, evolve_spruce_budworm, spruce_budworm_no_carrying_capacity
 
 
 st.set_page_config(page_title="Spruce Budworm Interactive Model", layout="wide")
@@ -130,3 +130,73 @@ with col2:
     
     st.metric("Current Time", f"{st.session_state.t[-1]:.2f}")
     st.metric("Current Population", f"{st.session_state.x[-1]:.3f}")
+
+
+# ============ MODEL COMPARISON SECTION ============
+st.divider()
+st.header("🔬 Model Comparison: With vs Without Carrying Capacity Term")
+st.markdown("""
+Compare the **original model** `r*x*(1-x/k) - x²/(1+x²)` with the **modified model** `r*x - x²/(1+x²)` 
+that removes the carrying capacity limiting term `-x/k`.
+""")
+
+comp_col1, comp_col2 = st.columns(2)
+
+with comp_col1:
+    st.subheader("📊 Phase Portrait Comparison")
+    
+    # Compute dx/dt for both models
+    x_comp = np.linspace(0, k, points)
+    dxdt_original = np.array([spruce_budworm(0.0, xv, r, k) for xv in x_comp])
+    dxdt_no_cap = np.array([spruce_budworm_no_carrying_capacity(0.0, xv, r, k) for xv in x_comp])
+    
+    # Create comparison plot
+    fig3, ax3 = plt.subplots(figsize=(7, 5))
+    ax3.plot(x_comp, dxdt_original, "b-", linewidth=2.5, label="Original (with -x/k)")
+    ax3.plot(x_comp, dxdt_no_cap, "r-", linewidth=2.5, label="Modified (no -x/k)")
+    ax3.axhline(0, color="gray", linestyle="--", alpha=0.5, linewidth=1.5)
+    ax3.axvline(st.session_state.x[-1], color="green", linestyle=":", linewidth=2, alpha=0.7,
+               label=f"Current x = {st.session_state.x[-1]:.2f}")
+    ax3.set_xlim(0, k)
+    ax3.set_xlabel("Population (x)", fontsize=11)
+    ax3.set_ylabel("Rate of change (dx/dt)", fontsize=11)
+    ax3.set_title("Phase Portrait Comparison", fontsize=12, fontweight="bold")
+    ax3.grid(True, alpha=0.3, linestyle="--")
+    ax3.legend(fontsize=9, loc="best")
+    st.pyplot(fig3)
+
+with comp_col2:
+    st.subheader("⏱️ Evolution Comparison")
+    
+    # Allow user to set comparison evolution parameters
+    comp_t_max = st.number_input("Comparison time span", min_value=1.0, value=50.0, step=5.0,
+                                 help="How long to simulate both models")
+    comp_x0 = st.number_input("Comparison initial population", min_value=0.1, value=1.0, step=0.1,
+                              help="Starting population for comparison")
+    
+    if st.button("🚀 Run Comparison", use_container_width=True):
+        from scipy.integrate import solve_ivp
+        
+        t_span = (0, comp_t_max)
+        t_eval = np.linspace(0, comp_t_max, 500)
+        
+        # Solve both models
+        sol_orig = solve_ivp(spruce_budworm, t_span, [comp_x0], t_eval=t_eval, args=(r, k), method="RK45")
+        sol_no_cap = solve_ivp(spruce_budworm_no_carrying_capacity, t_span, [comp_x0], 
+                               t_eval=t_eval, args=(r, k), method="RK45")
+        
+        # Plot comparison
+        fig4, ax4 = plt.subplots(figsize=(7, 5))
+        ax4.plot(sol_orig.t, sol_orig.y[0], "b-", linewidth=2.5, label="Original (with -x/k)")
+        ax4.plot(sol_no_cap.t, sol_no_cap.y[0], "r-", linewidth=2.5, label="Modified (no -x/k)")
+        ax4.set_ylim(0, None)
+        ax4.grid(True, alpha=0.3, linestyle="--")
+        ax4.set_xlabel("Time (t)", fontsize=11)
+        ax4.set_ylabel("Population (x)", fontsize=11)
+        ax4.set_title(f"Evolution Comparison (x₀={comp_x0}, r={r}, k={k})", fontsize=12, fontweight="bold")
+        ax4.legend(loc="best", fontsize=10)
+        st.pyplot(fig4)
+        
+        # Display comparison metrics
+        st.success(f"**Original model** final population: {sol_orig.y[0][-1]:.4f}")
+        st.success(f"**Modified model** final population: {sol_no_cap.y[0][-1]:.4f}")
