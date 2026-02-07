@@ -1,0 +1,23 @@
+# Machine performance and downtime data
+# Columns: MachineID, OperatingHours, DowntimeHours, MaintenanceCount, FailureCount, Efficiency
+MachineID,OperatingHours,DowntimeHours,MaintenanceCount,FailureCount,Efficiency
+M01,156.5,3.5,2,0,0.95
+M02,148.2,11.8,3,1,0.89
+M03,159.1,0.9,1,0,0.97
+M04,142.7,17.3,4,2,0.85
+M05,155.3,4.7,2,0,0.94
+M06,151.8,8.2,3,1,0.91
+M07,158.6,1.4,1,0,0.96
+M08,145.9,14.1,3,1,0.87
+M09,157.2,2.8,2,0,0.95
+M10,149.5,10.5,3,1,0.90
+M11,160.0,0.0,1,0,0.98
+M12,143.3,16.7,4,2,0.86
+M13,154.8,5.2,2,0,0.93
+M14,150.6,9.4,3,1,0.90
+M15,158.9,1.1,1,0,0.96
+M16,144.1,15.9,4,2,0.86
+M17,156.7,3.3,2,0,0.95
+M18,147.4,12.6,3,1,0.88
+M19,159.5,0.5,1,0,0.97
+M20,141.8,18.2,5,2,0.84
